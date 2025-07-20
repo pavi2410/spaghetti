@@ -1,5 +1,5 @@
 import * as React from "react"
-import { GalleryVerticalEnd, GripVertical } from "lucide-react"
+import { GripVertical } from "lucide-react"
 
 import {
   Sidebar,
@@ -84,13 +84,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <GalleryVerticalEnd className="size-4" />
+              <a href="/" className="flex items-center gap-3">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-lg">
+                  🍝
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Documentation</span>
-                  <span className="">Functions</span>
+                  <span className="font-semibold">Spaghetti</span>
+                  <span className="text-xs text-sidebar-foreground/70">Visual Programming</span>
                 </div>
               </a>
             </SidebarMenuButton>

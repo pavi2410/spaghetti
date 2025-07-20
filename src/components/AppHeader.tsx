@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button"
 import ShareButton from './ShareButton'
 import { Search, Settings, Github } from "lucide-react"
 import { ModeToggle } from "./mode-toggle"
-import { Separator } from "./ui/separator"
 import { ExamplesDropdown } from "./ExamplesDropdown"
 
 export function AppHeader() {
@@ -10,13 +9,6 @@ export function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <div className="container flex h-14 max-w-(--breakpoint-2xl) items-center px-4">
         <div className="flex items-center gap-4">
-          <a href="/" className="flex items-center gap-2 font-semibold">
-            <div className="flex aspect-square h-8 items-center justify-center rounded bg-primary text-primary-foreground">
-              CC
-            </div>
-            <span className="hidden md:inline-block">spaghetti</span>
-          </a>
-          <Separator orientation="vertical" className="h-6" />
           <nav className="flex items-center gap-2">
             <ExamplesDropdown />
             <Button
