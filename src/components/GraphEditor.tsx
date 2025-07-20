@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/theme-provider";
 import { Play, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import FunctionNode from './nodes/FunctionNode';
@@ -31,6 +32,7 @@ const nodeTypes = {
 };
 
 const GraphEditor = () => {
+  const { theme } = useTheme()
   const nodes = useStore($nodes);
   const edges = useStore($edges);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -306,6 +308,7 @@ const GraphEditor = () => {
             onConnectEnd={onConnectEnd}
             onEdgeDoubleClick={onEdgeDoubleClick}
             nodeTypes={nodeTypes}
+            colorMode={theme}
           >
             <Panel position="top-right" className="flex gap-2">
               <Button

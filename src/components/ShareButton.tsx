@@ -26,7 +26,7 @@ const ShareButton: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={handleShare}
-            className="w-9 px-0"
+            className="h-8 w-8"
           >
             <Share className="h-4 w-4" />
           </Button>
