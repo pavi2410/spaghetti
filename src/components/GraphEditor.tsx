@@ -7,6 +7,7 @@ import {
   useReactFlow,
   OnConnectStart,
   OnConnectEnd,
+  Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from "@/components/ui/button";
@@ -141,11 +142,19 @@ const GraphEditor = () => {
   }, [nodes]);
 
   // Handle connection end for creating input/output nodes
-  const onConnectEnd: OnConnectEnd = useCallback((event) => {
+  const onConnectEnd: OnConnectEnd = useCallback((event, connectionState) => {
     console.log('onConnectEnd called, connectingFrom:', connectingFromRef.current);
+    console.log('connectionState:', connectionState);
     
     if (!connectingFromRef.current || !reactFlowWrapper.current) {
       console.log('Early return - no connectingFrom or reactFlowWrapper');
+      connectingFromRef.current = null;
+      return;
+    }
+
+    // If a connection was made to an existing node, don't create a new node
+    if (connectionState?.isValid) {
+      console.log('Connection was made to existing node, not creating new node');
       connectingFromRef.current = null;
       return;
     }
