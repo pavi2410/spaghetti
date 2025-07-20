@@ -13,7 +13,13 @@ export type StringInputNode = Node<{
 
 export const StringInputNode = memo(({ data, id }: NodeProps<StringInputNode>) => {
   return (
-    <Card className="w-[250px]">
+    <Card className="w-[250px] relative">
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="value"
+        className="w-3 h-3 bg-blue-500"
+      />
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           String Input
@@ -33,16 +39,6 @@ export const StringInputNode = memo(({ data, id }: NodeProps<StringInputNode>) =
             onChange={(e) => data.onValueChange?.(e.target.value)}
             placeholder="Enter string value"
           />
-          <div className="flex justify-end">
-            <div className="relative">
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="value"
-                className="w-3 h-3 bg-blue-500"
-              />
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -57,7 +53,13 @@ export type NumberInputNode = Node<{
 
 export const NumberInputNode = memo(({ data, id }: NodeProps<NumberInputNode>) => {
   return (
-    <Card className="w-[250px]">
+    <Card className="w-[250px] relative">
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="value"
+        className="w-3 h-3 bg-green-500"
+      />
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           Number Input
@@ -78,16 +80,6 @@ export const NumberInputNode = memo(({ data, id }: NodeProps<NumberInputNode>) =
             onChange={(e) => data.onValueChange?.(Number(e.target.value))}
             placeholder="Enter number value"
           />
-          <div className="flex justify-end">
-            <div className="relative">
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="value"
-                className="w-3 h-3 bg-green-500"
-              />
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -102,7 +94,13 @@ export type BooleanInputNode = Node<{
 
 export const BooleanInputNode = memo(({ data, id }: NodeProps<BooleanInputNode>) => {
   return (
-    <Card className="w-[250px]">
+    <Card className="w-[250px] relative">
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="value"
+        className="w-3 h-3 bg-purple-500"
+      />
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           Boolean Input
@@ -125,16 +123,6 @@ export const BooleanInputNode = memo(({ data, id }: NodeProps<BooleanInputNode>)
             <option value="false">false</option>
             <option value="true">true</option>
           </select>
-          <div className="flex justify-end">
-            <div className="relative">
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="value"
-                className="w-3 h-3 bg-purple-500"
-              />
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

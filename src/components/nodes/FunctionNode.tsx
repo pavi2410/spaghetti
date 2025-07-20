@@ -163,7 +163,7 @@ const FunctionNode = ({ data, id }: NodeProps<FunctionNode>) => {
           {/* Output Ports */}
           {outputFields.length > 0 && (
             <div className="space-y-1">
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">
+              <h4 className="text-xs font-medium text-muted-foreground mb-2 text-right">
                 Outputs
               </h4>
               {outputFields.map((field) => (

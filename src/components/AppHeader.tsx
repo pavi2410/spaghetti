@@ -3,6 +3,7 @@ import ShareButton from './ShareButton'
 import { Search, Settings, Github } from "lucide-react"
 import { ModeToggle } from "./mode-toggle"
 import { Separator } from "./ui/separator"
+import { ExamplesDropdown } from "./ExamplesDropdown"
 
 export function AppHeader() {
   return (
@@ -17,6 +18,7 @@ export function AppHeader() {
           </a>
           <Separator orientation="vertical" className="h-6" />
           <nav className="flex items-center gap-2">
+            <ExamplesDropdown />
             <Button
               variant="ghost"
               size="sm"

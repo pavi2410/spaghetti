@@ -4,6 +4,7 @@ import { allFunctions, getFunctionById } from '@/lib/functions/index'
 import { FunctionNode } from '@/components/nodes/FunctionNode'
 import { StringInputNode, NumberInputNode, BooleanInputNode } from '@/components/nodes/InputNodes'
 import { StringViewerNode, BinaryViewerNode, JsonViewerNode } from '@/components/nodes/ViewerNodes'
+import { getExampleById } from '@/lib/examples'
 
 type AppNode = FunctionNode | StringInputNode | NumberInputNode | BooleanInputNode | StringViewerNode | BinaryViewerNode | JsonViewerNode;
 
@@ -360,7 +361,94 @@ export const executeGraph = async () => {
   logExecutionGraph()
 }
 
+export const loadExample = (exampleId: string) => {
+  const example = getExampleById(exampleId)
+  if (!example) {
+    console.warn('Example not found:', exampleId)
+    return
+  }
+
+  // Clear current graph
+  $nodes.set([])
+  $edges.set([])
+
+  // Create nodes with proper handlers
+  const newNodes: AppNode[] = example.nodes.map((nodeData) => {
+    const nodeId = nodeData.id
+    
+    // Create the appropriate node based on type
+    switch (nodeData.type) {
+      case 'string-input':
+        return {
+          ...nodeData,
+          data: {
+            ...nodeData.data,
+            onValueChange: (value: string) => {
+              $nodes.set(
+                $nodes.get().map((node) =>
+                  node.id === nodeId && node.type === 'string-input'
+                    ? { ...node, data: { ...node.data, value } }
+                    : node
+                )
+              )
+            },
+          },
+        } as StringInputNode
+
+      case 'number-input':
+        return {
+          ...nodeData,
+          data: {
+            ...nodeData.data,
+            onValueChange: (value: number) => {
+              $nodes.set(
+                $nodes.get().map((node) =>
+                  node.id === nodeId && node.type === 'number-input'
+                    ? { ...node, data: { ...node.data, value } }
+                    : node
+                )
+              )
+            },
+          },
+        } as NumberInputNode
+
+      case 'boolean-input':
+        return {
+          ...nodeData,
+          data: {
+            ...nodeData.data,
+            onValueChange: (value: boolean) => {
+              $nodes.set(
+                $nodes.get().map((node) =>
+                  node.id === nodeId && node.type === 'boolean-input'
+                    ? { ...node, data: { ...node.data, value } }
+                    : node
+                )
+              )
+            },
+          },
+        } as BooleanInputNode
+
+      default:
+        return nodeData as AppNode
+    }
+  })
+
+  // Set nodes and edges
+  $nodes.set(newNodes)
+  $edges.set(example.edges)
+
+  console.log(`Loaded example: ${example.name}`)
+}
+
 // Computed values
 export const $sortedFunctionsByCategory = atom(
   Object.groupBy(allFunctions, (func) => func.category)
 )
+
+// Simple store object for access
+export const graphStore = {
+  loadExample,
+  addNode,
+  executeGraph
+}
