@@ -34,7 +34,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.1.11",
     "tw-animate-css": "^1.3.5",
-    "vite": "^6.0.11"
+    "vite": "^7.0.5"
   },
   "module": "src/index.tsx",
   "peerDependencies": {

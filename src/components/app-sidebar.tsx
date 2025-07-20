@@ -13,23 +13,63 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import { functions } from "@/lib/functions"
+import { allFunctions, getFunctionsByCategory, getCategories } from "@/lib/functions/index"
 
 // Group functions by category
-const groupedFunctions = Object.groupBy(functions, (func) => func.category)
+const groupedFunctions = Object.fromEntries(
+  getCategories().map(category => [
+    category, 
+    getFunctionsByCategory(category)
+  ])
+)
+
+// Add input and viewer nodes
+const inputNodes = [
+  { id: 'string-input', name: 'String Input', description: 'Provide string values' },
+  { id: 'number-input', name: 'Number Input', description: 'Provide numeric values' },
+  { id: 'boolean-input', name: 'Boolean Input', description: 'Provide true/false values' },
+]
+
+const viewerNodes = [
+  { id: 'string-viewer', name: 'String Viewer', description: 'View data as string' },
+  { id: 'binary-viewer', name: 'Binary Viewer', description: 'View data as binary' },
+  { id: 'json-viewer', name: 'JSON Viewer', description: 'View data as formatted JSON' },
+]
 
 // Generate navigation data
 const data = {
-  navMain: Object.entries(groupedFunctions).map(([category, funcs]) => ({
-    title: category,
-    url: `#${category.toLowerCase().replace(/[\s/]+/g, '-')}`,
-    items: funcs.map(func => ({
-      title: func.name,
-      url: `#${func.id}`,
-      description: func.description,
-      id: func.id,
+  navMain: [
+    {
+      title: 'Input Providers',
+      url: '#input-providers',
+      items: inputNodes.map(node => ({
+        title: node.name,
+        url: `#${node.id}`,
+        description: node.description,
+        id: node.id,
+      }))
+    },
+    {
+      title: 'Output Viewers',
+      url: '#output-viewers',
+      items: viewerNodes.map(node => ({
+        title: node.name,
+        url: `#${node.id}`,
+        description: node.description,
+        id: node.id,
+      }))
+    },
+    ...Object.entries(groupedFunctions).map(([category, funcs]) => ({
+      title: category,
+      url: `#${category.toLowerCase().replace(/[\s/]+/g, '-')}`,
+      items: funcs?.map(func => ({
+        title: func.name,
+        url: `#${func.id}`,
+        description: func.description,
+        id: func.id,
+      })) || []
     }))
-  }))
+  ]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

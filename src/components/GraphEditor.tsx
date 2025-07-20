@@ -10,11 +10,19 @@ import '@xyflow/react/dist/style.css';
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 import FunctionNode from './nodes/FunctionNode';
+import { StringInputNode, NumberInputNode, BooleanInputNode } from './nodes/InputNodes';
+import { StringViewerNode, BinaryViewerNode, JsonViewerNode } from './nodes/ViewerNodes';
 import { useStore } from '@nanostores/react';
 import { $nodes, $edges, updateNodes, updateEdges, connectEdge, executeGraph, addNode } from '@/stores/graph';
 
 const nodeTypes = {
   function: FunctionNode,
+  'string-input': StringInputNode,
+  'number-input': NumberInputNode,
+  'boolean-input': BooleanInputNode,
+  'string-viewer': StringViewerNode,
+  'binary-viewer': BinaryViewerNode,
+  'json-viewer': JsonViewerNode,
 };
 
 const GraphEditor = () => {

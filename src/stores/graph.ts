@@ -1,16 +1,20 @@
 import { atom } from 'nanostores'
-import { Edge, Connection, applyNodeChanges, applyEdgeChanges, addEdge, XYPosition, OnNodesChange, OnEdgesChange } from '@xyflow/react'
-import { functions } from '@/lib/functions'
+import { Edge, Connection, applyNodeChanges, applyEdgeChanges, addEdge, XYPosition, OnNodesChange, OnEdgesChange, Node } from '@xyflow/react'
+import { allFunctions, getFunctionById } from '@/lib/functions/index'
 import { FunctionNode } from '@/components/nodes/FunctionNode'
+import { StringInputNode, NumberInputNode, BooleanInputNode } from '@/components/nodes/InputNodes'
+import { StringViewerNode, BinaryViewerNode, JsonViewerNode } from '@/components/nodes/ViewerNodes'
+
+type AppNode = FunctionNode | StringInputNode | NumberInputNode | BooleanInputNode | StringViewerNode | BinaryViewerNode | JsonViewerNode;
 
 // Stores
-export const $nodes = atom<FunctionNode[]>([])
+export const $nodes = atom<AppNode[]>([])
 export const $edges = atom<Edge[]>([])
 export const $commandPaletteOpen = atom(false)
 
 // Actions
-export const updateNodes: OnNodesChange<FunctionNode> = (changes) => {
-  $nodes.set(applyNodeChanges<FunctionNode>(changes, $nodes.get()))
+export const updateNodes: OnNodesChange<AppNode> = (changes) => {
+  $nodes.set(applyNodeChanges<AppNode>(changes, $nodes.get()))
 }
 
 export const updateEdges: OnEdgesChange = (changes) => {
@@ -21,34 +25,120 @@ export const connectEdge = (connection: Connection) => {
   $edges.set(addEdge(connection, $edges.get()))
 }
 
-export const addNode = (functionId: string, position?: XYPosition) => {
-  const newNode: FunctionNode = {
-    type: 'function',
-    id: `${functionId}-${$nodes.get().length}`,
-    position: position || { x: 100, y: 100 },
-    data: {
-      functionId: functionId,
-      inputs: {},
-      outputs: {},
-      onInputChange: (inputId: string, value: string) => {
-        $nodes.set(
-          $nodes.get().map((node) =>
-            node.id === newNode.id
-              ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  inputs: {
-                    ...node.data.inputs,
-                    [inputId]: value,
-                  },
-                },
-              }
-              : node
-          )
-        )
-      },
-    },
+export const addNode = (nodeType: string, position?: XYPosition) => {
+  const baseId = `${nodeType}-${Date.now()}`;
+  const defaultPosition = position || { x: 100, y: 100 };
+
+  let newNode: AppNode;
+
+  // Create different types of nodes
+  switch (nodeType) {
+    case 'string-input':
+      newNode = {
+        type: 'string-input',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          value: '',
+          onValueChange: (value: string) => {
+            $nodes.set(
+              $nodes.get().map((node) =>
+                node.id === baseId && node.type === 'string-input'
+                  ? { ...node, data: { ...node.data, value } }
+                  : node
+              )
+            )
+          },
+        },
+      } as StringInputNode;
+      break;
+
+    case 'number-input':
+      newNode = {
+        type: 'number-input',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          value: 0,
+          onValueChange: (value: number) => {
+            $nodes.set(
+              $nodes.get().map((node) =>
+                node.id === baseId && node.type === 'number-input'
+                  ? { ...node, data: { ...node.data, value } }
+                  : node
+              )
+            )
+          },
+        },
+      } as NumberInputNode;
+      break;
+
+    case 'boolean-input':
+      newNode = {
+        type: 'boolean-input',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          value: false,
+          onValueChange: (value: boolean) => {
+            $nodes.set(
+              $nodes.get().map((node) =>
+                node.id === baseId && node.type === 'boolean-input'
+                  ? { ...node, data: { ...node.data, value } }
+                  : node
+              )
+            )
+          },
+        },
+      } as BooleanInputNode;
+      break;
+
+    case 'string-viewer':
+      newNode = {
+        type: 'string-viewer',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          value: undefined,
+        },
+      } as StringViewerNode;
+      break;
+
+    case 'binary-viewer':
+      newNode = {
+        type: 'binary-viewer',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          value: undefined,
+        },
+      } as BinaryViewerNode;
+      break;
+
+    case 'json-viewer':
+      newNode = {
+        type: 'json-viewer',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          value: undefined,
+        },
+      } as JsonViewerNode;
+      break;
+
+    default:
+      // Assume it's a function node
+      newNode = {
+        type: 'function',
+        id: baseId,
+        position: defaultPosition,
+        data: {
+          functionId: nodeType,
+          outputs: {},
+          validationErrors: {},
+        },
+      } as FunctionNode;
+      break;
   }
 
   $nodes.set([...$nodes.get(), newNode])
@@ -114,36 +204,53 @@ export const executeGraph = async () => {
       continue
     }
 
-    const fn = functions.find((f) => f.id === node.data.functionId)
-    if (!fn) {
-      console.warn('Function not found:', node.data.functionId)
+    // Skip non-function nodes during execution
+    if (node.type !== 'function') {
       continue
     }
 
-    // Get input values from connected nodes and node's own inputs
-    const inputs: Record<string, any> = { ...node.data.inputs }
+    const fn = getFunctionById((node.data as any).functionId)
+    if (!fn) {
+      console.warn('Function not found:', (node.data as any).functionId)
+      continue
+    }
+
+    // Get input values from connected nodes
+    const inputs: Record<string, any> = {}
     const incomingEdges = edges.filter((edge) => edge.target === nodeId)
     
     for (const edge of incomingEdges) {
       const sourceNode = nodes.find((n) => n.id === edge.source)
-      if (!sourceNode?.data.outputs) continue
+      if (!sourceNode) continue
       
-      // Use the source node's output as input for the target handle
-      const sourceOutput = sourceNode.data.outputs.output
-      if (sourceOutput !== undefined) {
-        const targetHandle = edge.targetHandle || fn.inputs[0]?.id || 'input'
-        inputs[targetHandle] = sourceOutput
+      const sourceHandle = edge.sourceHandle
+      const targetHandle = edge.targetHandle
+      
+      if (!sourceHandle || !targetHandle) continue
+      
+      let sourceValue;
+      
+      // Get value based on source node type
+      if (sourceNode.type === 'string-input' || sourceNode.type === 'number-input' || sourceNode.type === 'boolean-input') {
+        sourceValue = (sourceNode.data as any).value;
+      } else if (sourceNode.type === 'function') {
+        sourceValue = (sourceNode.data as any).outputs?.[sourceHandle];
+      }
+      
+      if (sourceValue !== undefined) {
+        inputs[targetHandle] = sourceValue;
       }
     }
 
     console.log(`Executing function "${fn.name}" (${nodeId})`, {
       inputs,
-      inputDefinitions: fn.inputs
+      inputFields: fn.getInputFields()
     })
 
-    try {
-      const result = await fn.execute(inputs)
+    // Use the new validation system
+    const result = await fn.executeWithValidation(inputs)
 
+    if (result.success) {
       // Update the node's outputs
       $nodes.set(
         nodes.map((n) =>
@@ -152,19 +259,101 @@ export const executeGraph = async () => {
               ...n,
               data: {
                 ...n.data,
-                outputs: {
-                  output: result,
-                },
+                outputs: result.data,
+                validationErrors: {}, // Clear any previous errors
               },
             }
             : n
         )
       )
 
-      console.log(`Function "${fn.name}" completed:`, { result })
-    } catch (error) {
-      console.error(`Error executing function "${fn.name}":`, error)
+      console.log(`Function "${fn.name}" completed:`, { result: result.data })
+    } else {
+      // Handle validation or execution errors
+      console.error(`Error executing function "${fn.name}":`, result.error)
+      
+      // Update node with error information
+      const validationErrors: Record<string, string> = {}
+      
+      if (result.code === 'VALIDATION_ERROR' && result.details) {
+        // Extract field-level errors from Zod validation
+        const details = result.details as any
+        if (details.fieldErrors) {
+          Object.entries(details.fieldErrors).forEach(([field, errors]) => {
+            validationErrors[field] = Array.isArray(errors) ? errors[0] : String(errors)
+          })
+        }
+      } else {
+        // General error - show on the node
+        validationErrors['_general'] = result.error
+      }
+
+      $nodes.set(
+        nodes.map((n) =>
+          n.id === nodeId
+            ? {
+              ...n,
+              data: {
+                ...n.data,
+                validationErrors,
+                outputs: {}, // Clear outputs on error
+              },
+            }
+            : n
+        )
+      )
     }
+  }
+
+  // Update viewer nodes with data from connected function outputs
+  const updatedNodes = $nodes.get()
+  const viewerUpdates: AppNode[] = []
+
+  for (const node of updatedNodes) {
+    if (node.type === 'string-viewer' || node.type === 'binary-viewer' || node.type === 'json-viewer') {
+      const incomingEdge = edges.find((edge) => edge.target === node.id)
+      
+      if (incomingEdge) {
+        const sourceNode = updatedNodes.find((n) => n.id === incomingEdge.source)
+        
+        if (sourceNode && sourceNode.type === 'function') {
+          const sourceHandle = incomingEdge.sourceHandle
+          const outputValue = (sourceNode.data as any).outputs?.[sourceHandle]
+          
+          if (outputValue !== undefined) {
+            viewerUpdates.push({
+              ...node,
+              data: {
+                ...node.data,
+                value: outputValue,
+              },
+            })
+          }
+        } else if (sourceNode && (sourceNode.type === 'string-input' || sourceNode.type === 'number-input' || sourceNode.type === 'boolean-input')) {
+          const inputValue = (sourceNode.data as any).value
+          
+          if (inputValue !== undefined) {
+            viewerUpdates.push({
+              ...node,
+              data: {
+                ...node.data,
+                value: inputValue,
+              },
+            })
+          }
+        }
+      }
+    }
+  }
+
+  // Apply viewer updates
+  if (viewerUpdates.length > 0) {
+    $nodes.set(
+      updatedNodes.map((node) => {
+        const update = viewerUpdates.find((u) => u.id === node.id)
+        return update || node
+      })
+    )
   }
 
   // Log final state
@@ -173,5 +362,5 @@ export const executeGraph = async () => {
 
 // Computed values
 export const $sortedFunctionsByCategory = atom(
-  Object.groupBy(Object.entries(functions), (entry) => entry[1].category)
+  Object.groupBy(allFunctions, (func) => func.category)
 )
