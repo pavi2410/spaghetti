@@ -1,16 +1,30 @@
 # Spaghetti
 
-A web-based tool that allows you to build execution graphs for parsing and decoding data. Built with React Flow, Vite, and shadcn/ui. Named "Spaghetti" after how easy it is to make node graph code look like spaghetti.
+A CyberChef-like tool built with React Flow for visual node-based data processing. Designed for quick and dirty experimentation and exploration, making it perfect for learning and educational purposes. Can be easily embedded into websites, blogs, tutorials, and documentation.
+
+Named "Spaghetti" after how easy it is to make node graph code look like spaghetti when building complex data processing pipelines.
 
 ## Features
 
-- Build execution graphs using React Flow
-- Base64 encoding/decoding
-- JWT encoding/decoding
-- Command palette for quick actions
-- Search functionality
-- Share your graphs via URL
-- Function documentation viewer
+- **Visual Node-Based Interface**: Build execution graphs using React Flow for intuitive data processing
+- **Educational Focus**: Perfect for learning and experimenting with data transformations
+- **Embeddable**: Can be integrated into websites, blogs, tutorials, and documentation
+- **Code Generation**: Export your data processing pipelines to various programming languages
+- **Built-in Function Classes**: 
+  - String manipulation
+  - Binary data operations
+  - Cryptography functions
+  - JSON processing
+  - Base64 encoding/decoding
+  - JWT encoding/decoding
+  - Compression algorithms
+  - And more data transformation operations
+- **User Experience**:
+  - Command palette for quick actions (Ctrl/Cmd + K)
+  - Search functionality
+  - Share your graphs via URL
+  - Function documentation viewer
+- **Quick Experimentation**: Designed for rapid prototyping and exploration
 
 ## Getting Started
 
