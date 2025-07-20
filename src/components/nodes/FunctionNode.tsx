@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { getFunctionById, type FieldInfo } from '@/lib/functions/index';
+import { NodeContextMenu } from '../NodeContextMenu';
+import { graphStore } from '@/stores/graph';
 
 export type FunctionNode = Node<{
   functionId: string;
@@ -123,7 +125,8 @@ const FunctionNode = ({ data, id }: NodeProps<FunctionNode>) => {
   const outputFields = fn.getOutputFields();
 
   return (
-    <Card className="w-[280px]">
+    <NodeContextMenu nodeId={id} onDeleteNode={graphStore.deleteNode}>
+      <Card className="w-[280px]">
       <CardHeader className="space-y-1 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           {fn.name}
@@ -179,6 +182,7 @@ const FunctionNode = ({ data, id }: NodeProps<FunctionNode>) => {
         </div>
       </CardContent>
     </Card>
+    </NodeContextMenu>
   );
 };
 

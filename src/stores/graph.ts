@@ -26,6 +26,16 @@ export const connectEdge = (connection: Connection) => {
   $edges.set(addEdge(connection, $edges.get()))
 }
 
+export const deleteNode = (nodeId: string) => {
+  // Remove the node
+  $nodes.set($nodes.get().filter(node => node.id !== nodeId))
+  
+  // Remove all edges connected to this node
+  $edges.set($edges.get().filter(edge => 
+    edge.source !== nodeId && edge.target !== nodeId
+  ))
+}
+
 export const addNode = (nodeType: string, position?: XYPosition) => {
   const baseId = `${nodeType}-${Date.now()}`;
   const defaultPosition = position || { x: 100, y: 100 };
@@ -450,5 +460,6 @@ export const $sortedFunctionsByCategory = atom(
 export const graphStore = {
   loadExample,
   addNode,
-  executeGraph
+  executeGraph,
+  deleteNode
 }
