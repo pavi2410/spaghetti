@@ -12,13 +12,13 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
-import { Play, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Play, Loader2, CheckCircle2, XCircle, Undo2, Redo2 } from "lucide-react";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import FunctionNode from './nodes/FunctionNode';
 import { StringInputNode, NumberInputNode, BooleanInputNode } from './nodes/InputNodes';
 import { StringViewerNode, BinaryViewerNode, JsonViewerNode } from './nodes/ViewerNodes';
 import { useStore } from '@nanostores/react';
-import { $nodes, $edges, updateNodes, updateEdges, connectEdge, executeGraph, addNode } from '@/stores/graph';
+import { $nodes, $edges, updateNodes, updateEdges, connectEdge, executeGraph, addNode, graphStore } from '@/stores/graph';
 import { getFunctionById } from '@/lib/functions/index';
 
 const nodeTypes = {
@@ -71,12 +71,28 @@ const GraphEditor = () => {
     }
   }, [isExecuting]);
 
-  // Keyboard shortcut for execution (Ctrl/Cmd+Enter)
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Execution shortcut (Ctrl/Cmd+Enter)
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
         handleExecute();
+        return;
+      }
+      
+      // Undo shortcut (Ctrl/Cmd+Z)
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        graphStore.undo();
+        return;
+      }
+      
+      // Redo shortcut (Ctrl/Cmd+Shift+Z)
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && event.shiftKey) {
+        event.preventDefault();
+        graphStore.redo();
+        return;
       }
     };
 
@@ -86,8 +102,7 @@ const GraphEditor = () => {
 
   // Clear canvas function
   const clearCanvas = useCallback(() => {
-    $nodes.set([]);
-    $edges.set([]);
+    graphStore.clearCanvas();
   }, []);
 
   // Handle connection start for creating input/output nodes
@@ -311,6 +326,26 @@ const GraphEditor = () => {
             colorMode={theme}
           >
             <Panel position="top-right" className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => graphStore.undo()}
+                disabled={!graphStore.canUndo()}
+                title={`Undo (${navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'}+Z)`}
+              >
+                <Undo2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Undo</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => graphStore.redo()}
+                disabled={!graphStore.canRedo()}
+                title={`Redo (${navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'}+Shift+Z)`}
+              >
+                <Redo2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Redo</span>
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

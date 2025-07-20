@@ -1,5 +1,5 @@
 import { atom } from 'nanostores'
-import { Edge, Connection, applyNodeChanges, applyEdgeChanges, addEdge, XYPosition, OnNodesChange, OnEdgesChange, Node } from '@xyflow/react'
+import { Edge, Connection, applyNodeChanges, applyEdgeChanges, addEdge, XYPosition, OnNodesChange, OnEdgesChange } from '@xyflow/react'
 import { allFunctions, getFunctionById } from '@/lib/functions/index'
 import { FunctionNode } from '@/components/nodes/FunctionNode'
 import { StringInputNode, NumberInputNode, BooleanInputNode } from '@/components/nodes/InputNodes'
@@ -8,25 +8,131 @@ import { getExampleById } from '@/lib/examples'
 
 type AppNode = FunctionNode | StringInputNode | NumberInputNode | BooleanInputNode | StringViewerNode | BinaryViewerNode | JsonViewerNode;
 
+interface GraphSnapshot {
+  nodes: AppNode[];
+  edges: Edge[];
+}
+
 // Stores
 export const $nodes = atom<AppNode[]>([])
 export const $edges = atom<Edge[]>([])
 export const $commandPaletteOpen = atom(false)
 
+// Undo/Redo history
+const history: GraphSnapshot[] = []
+const future: GraphSnapshot[] = []
+const maxHistorySize = 50
+
+// Helper to take snapshots
+const takeSnapshot = () => {
+  const snapshot: GraphSnapshot = {
+    nodes: JSON.parse(JSON.stringify($nodes.get())),
+    edges: JSON.parse(JSON.stringify($edges.get()))
+  }
+  
+  history.push(snapshot)
+  
+  // Limit history size
+  if (history.length > maxHistorySize) {
+    history.shift()
+  }
+  
+  // Clear future when new action is taken
+  future.length = 0
+}
+
+// Helper to restore node handlers
+const restoreNodeHandlers = (nodes: AppNode[]): AppNode[] => {
+  return nodes.map((nodeData) => {
+    const nodeId = nodeData.id
+    
+    switch (nodeData.type) {
+      case 'string-input':
+        return {
+          ...nodeData,
+          data: {
+            ...nodeData.data,
+            onValueChange: (value: string) => {
+              $nodes.set(
+                $nodes.get().map((node) =>
+                  node.id === nodeId && node.type === 'string-input'
+                    ? { ...node, data: { ...node.data, value } }
+                    : node
+                )
+              )
+            },
+          },
+        } as StringInputNode
+      
+      case 'number-input':
+        return {
+          ...nodeData,
+          data: {
+            ...nodeData.data,
+            onValueChange: (value: number) => {
+              $nodes.set(
+                $nodes.get().map((node) =>
+                  node.id === nodeId && node.type === 'number-input'
+                    ? { ...node, data: { ...node.data, value } }
+                    : node
+                )
+              )
+            },
+          },
+        } as NumberInputNode
+      
+      case 'boolean-input':
+        return {
+          ...nodeData,
+          data: {
+            ...nodeData.data,
+            onValueChange: (value: boolean) => {
+              $nodes.set(
+                $nodes.get().map((node) =>
+                  node.id === nodeId && node.type === 'boolean-input'
+                    ? { ...node, data: { ...node.data, value } }
+                    : node
+                )
+              )
+            },
+          },
+        } as BooleanInputNode
+      
+      default:
+        return nodeData
+    }
+  })
+}
+
 // Actions
 export const updateNodes: OnNodesChange<AppNode> = (changes) => {
+  // Take snapshot before applying changes for move operations
+  const hasMove = changes.some(change => change.type === 'position' && change.dragging === false)
+  if (hasMove) {
+    takeSnapshot()
+  }
+  
   $nodes.set(applyNodeChanges<AppNode>(changes, $nodes.get()))
 }
 
 export const updateEdges: OnEdgesChange = (changes) => {
+  // Take snapshot before applying changes for remove operations
+  const hasRemove = changes.some(change => change.type === 'remove')
+  if (hasRemove) {
+    takeSnapshot()
+  }
+  
   $edges.set(applyEdgeChanges(changes, $edges.get()))
 }
 
 export const connectEdge = (connection: Connection) => {
+  takeSnapshot()
   $edges.set(addEdge(connection, $edges.get()))
 }
 
 export const deleteNode = (nodeId: string) => {
+  takeSnapshot()
+  
   // Remove the node
   $nodes.set($nodes.get().filter(node => node.id !== nodeId))
   
@@ -37,6 +143,8 @@ export const deleteNode = (nodeId: string) => {
 }
 
 export const addNode = (nodeType: string, position?: XYPosition) => {
+  takeSnapshot()
+  
   const baseId = `${nodeType}-${Date.now()}`;
   const defaultPosition = position || { x: 100, y: 100 };
 
@@ -155,6 +263,61 @@ export const addNode = (nodeType: string, position?: XYPosition) => {
   $nodes.set([...$nodes.get(), newNode])
 }
 
+// Undo/Redo actions
+export const undo = () => {
+  if (history.length === 0) return false
+  
+  // Save current state to future
+  const currentSnapshot: GraphSnapshot = {
+    nodes: JSON.parse(JSON.stringify($nodes.get())),
+    edges: JSON.parse(JSON.stringify($edges.get()))
+  }
+  future.push(currentSnapshot)
+  
+  // Restore previous state
+  const previousSnapshot = history.pop()!
+  const restoredNodes = restoreNodeHandlers(previousSnapshot.nodes)
+  
+  $nodes.set(restoredNodes)
+  $edges.set(previousSnapshot.edges)
+  
+  return true
+}
+
+export const redo = () => {
+  if (future.length === 0) return false
+  
+  // Save current state to history
+  const currentSnapshot: GraphSnapshot = {
+    nodes: JSON.parse(JSON.stringify($nodes.get())),
+    edges: JSON.parse(JSON.stringify($edges.get()))
+  }
+  history.push(currentSnapshot)
+  
+  // Restore future state
+  const nextSnapshot = future.pop()!
+  const restoredNodes = restoreNodeHandlers(nextSnapshot.nodes)
+  
+  $nodes.set(restoredNodes)
+  $edges.set(nextSnapshot.edges)
+  
+  return true
+}
+
+export const canUndo = () => history.length > 0
+export const canRedo = () => future.length > 0
+
+export const clearHistory = () => {
+  history.length = 0
+  future.length = 0
+}
+
+export const clearCanvas = () => {
+  takeSnapshot()
+  $nodes.set([])
+  $edges.set([])
+}
+
 export const logExecutionGraph = () => {
   const nodes = $nodes.get()
   const edges = $edges.get()
@@ -163,9 +326,9 @@ export const logExecutionGraph = () => {
   console.log('Nodes:', nodes.map(n => ({
     id: n.id,
     type: n.type,
-    functionId: n.data.functionId,
-    inputs: n.data.inputs,
-    outputs: n.data.outputs
+    functionId: (n.data as any).functionId,
+    inputs: (n.data as any).inputs,
+    outputs: (n.data as any).outputs
   })))
   console.log('Edges:', edges)
   console.groupEnd()
@@ -378,6 +541,8 @@ export const loadExample = (exampleId: string) => {
     return
   }
 
+  takeSnapshot()
+  
   // Clear current graph
   $nodes.set([])
   $edges.set([])
@@ -461,5 +626,11 @@ export const graphStore = {
   loadExample,
   addNode,
   executeGraph,
-  deleteNode
+  deleteNode,
+  undo,
+  redo,
+  canUndo,
+  canRedo,
+  clearHistory,
+  clearCanvas
 }
