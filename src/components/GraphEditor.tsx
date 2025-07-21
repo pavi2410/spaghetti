@@ -100,6 +100,13 @@ const GraphEditor = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleExecute]);
 
+  // Load state from URL on component mount
+  useEffect(() => {
+    if (graphStore.hasSharedState()) {
+      graphStore.loadStateFromURL();
+    }
+  }, []);
+
   // Clear canvas function
   const clearCanvas = useCallback(() => {
     graphStore.clearCanvas();

@@ -5,6 +5,7 @@ import { FunctionNode } from '@/components/nodes/FunctionNode'
 import { StringInputNode, NumberInputNode, BooleanInputNode } from '@/components/nodes/InputNodes'
 import { StringViewerNode, BinaryViewerNode, JsonViewerNode } from '@/components/nodes/ViewerNodes'
 import { getExampleById } from '@/lib/examples'
+import { decodeStateFromURL, clearStateFromURL, hasStateInURL } from '@/utils/urlState'
 
 type AppNode = FunctionNode | StringInputNode | NumberInputNode | BooleanInputNode | StringViewerNode | BinaryViewerNode | JsonViewerNode;
 
@@ -616,6 +617,33 @@ export const loadExample = (exampleId: string) => {
   console.log(`Loaded example: ${example.name}`)
 }
 
+export const loadStateFromURL = () => {
+  const state = decodeStateFromURL()
+  if (!state) {
+    return false
+  }
+
+  // Clear current graph without taking a snapshot (since we're loading)
+  $nodes.set([])
+  $edges.set([])
+
+  // Restore nodes with proper handlers
+  const restoredNodes = restoreNodeHandlers(state.nodes)
+  
+  $nodes.set(restoredNodes)
+  $edges.set(state.edges)
+  
+  // Clear the state from URL after loading
+  clearStateFromURL()
+  
+  console.log('Loaded graph from URL')
+  return true
+}
+
+export const hasSharedState = () => {
+  return hasStateInURL()
+}
+
 // Computed values
 export const $sortedFunctionsByCategory = atom(
   Object.groupBy(allFunctions, (func) => func.category)
@@ -632,5 +660,7 @@ export const graphStore = {
   canUndo,
   canRedo,
   clearHistory,
-  clearCanvas
+  clearCanvas,
+  loadStateFromURL,
+  hasSharedState
 }
